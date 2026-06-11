@@ -54,7 +54,26 @@ class HtmlCrawler(BaseCrawler):
                                                 "shift_jis", "latin-1"])
         self._encoding = config.get("encoding", "auto")
         self._relative_links_only = config.get("relative_links_only", False)
-        self._keep_domains = config.get("keep_domains", None)  # extra domains to crawl
+        self._keep_domains = config.get("keep_domains", None)
+
+        # ---- Path scope: only crawl under the seed URL's project path ----
+        # e.g. https://deepwiki.com/leggedrobotics/ocs2
+        #   → prefix = /leggedrobotics/ocs2  (ocs2 is the project, not a file)
+        # e.g. https://www.marxists.org/chinese/lilisan/index.htm
+        #   → prefix = /chinese/lilisan/      (index.htm is a file, use parent dir)
+        parsed = urlparse(seed_url)
+        path = parsed.path.rstrip("/")
+        segments = [s for s in path.split("/") if s]
+        if segments:
+            last = segments[-1]
+            # If last segment looks like a file (has extension), use parent dir
+            if "." in last.split("/")[-1] and not last.startswith("."):
+                self._path_prefix = "/" + "/".join(segments[:-1]) + "/"
+            else:
+                self._path_prefix = "/" + "/".join(segments)
+        else:
+            self._path_prefix = "/"
+        logger.info(f"  Path scope: {self._path_prefix}*")
 
     def _rate_wait(self):
         now = time.time()
@@ -148,6 +167,10 @@ class HtmlCrawler(BaseCrawler):
                 allowed_domains.update(self._keep_domains)
 
             if parsed.netloc not in allowed_domains:
+                continue
+
+            # Path scope: only crawl under the seed URL's project path
+            if not parsed.path.rstrip("/").startswith(self._path_prefix.rstrip("/")):
                 continue
 
             # Skip non-page resources

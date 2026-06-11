@@ -54,6 +54,18 @@ https://your-wiki.example.com/
 - **指数退避重试**：网络错误自动重试 2 次
 - **429 处理**：读取 `Retry-After` 响应头并按指示等待
 
+## 爬取范围控制
+
+自动限制爬取范围，避免爬出整个域名：
+
+- **HTML 站点**：路径前缀约束。如 `deepwiki.com/a/b` → 只爬 `a/b/*`，不爬其他仓库
+- **MediaWiki 站点**：深度限制（默认 depth=1，种子页 + 直链页）。通过 `--max-depth` 调整
+
+```bash
+python claw.py --max-depth 2    # 更深（种子页 + 子页 + 孙页）
+python claw.py --max-depth 0    # 只爬种子页
+```
+
 ## 断点续爬
 
 - 每个站点在 `output/<domain>/_state.json` 保存进度

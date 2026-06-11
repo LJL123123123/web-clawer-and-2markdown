@@ -123,6 +123,9 @@ def create_crawler(seed_url, output_root, resume=True):
 
     # Create crawler based on type
     if crawler_type == "mediawiki":
+        # Default max_depth=1 for MediaWiki to avoid crawling entire wiki
+        if config.get("max_depth") is None:
+            config["max_depth"] = 1
         from claws.crawlers.mediawiki_crawler import MediaWikiCrawler
         return MediaWikiCrawler(seed_url, config, None, state, wiki_output)
 
@@ -214,8 +217,13 @@ def main():
 
         _active_crawlers.append(crawler)
 
+        # max_depth: CLI arg takes priority, then per-domain config, then unlimited
+        max_depth = args.max_depth
+        if max_depth is None:
+            max_depth = crawler.config.get("max_depth")
+
         try:
-            stats = crawler.crawl(max_pages=args.max_pages, max_depth=args.max_depth)
+            stats = crawler.crawl(max_pages=args.max_pages, max_depth=max_depth)
             total_stats.append((seed_url, stats))
         except KeyboardInterrupt:
             logger.info(f"\n中断于：{seed_url}")

@@ -81,7 +81,7 @@ class MediaWikiCrawler(BaseCrawler):
             self._page_title = unquote(query["title"][0])
 
         self._visited_titles = set()
-        self._title_queue = [self._page_title]
+        self._title_queue = [(self._page_title, 0)]  # (title, depth)
 
         logger.info(f"MediaWiki detected: {self.domain}, starting from '{self._page_title}'")
 
@@ -182,7 +182,7 @@ class MediaWikiCrawler(BaseCrawler):
     # ---- Crawl loop (title-driven) ----
 
     def crawl(self, max_pages=None, depth=0, max_depth=None):
-        """Crawl via API, driven by page titles."""
+        """Crawl via API, driven by page titles with depth tracking."""
         pages_crawled = 0
         seen_in_queue = {self._page_title}
 
@@ -191,7 +191,11 @@ class MediaWikiCrawler(BaseCrawler):
                 logger.info(f"Reached max_pages limit ({max_pages})")
                 break
 
-            title = self._title_queue.pop(0)
+            title, current_depth = self._title_queue.pop(0)
+
+            # Check depth limit
+            if max_depth is not None and current_depth > max_depth:
+                continue
 
             if title in self._visited_titles:
                 continue
@@ -202,7 +206,7 @@ class MediaWikiCrawler(BaseCrawler):
                 self._visited_titles.add(title)
                 continue
 
-            logger.info(f"[{pages_crawled + 1}] Crawling: {title}")
+            logger.info(f"[{pages_crawled + 1}] Crawling (depth {current_depth}): {title}")
 
             self.state.mark_in_progress(page_url)
 
@@ -245,7 +249,7 @@ class MediaWikiCrawler(BaseCrawler):
             for nt in new_titles:
                 if nt not in seen_in_queue and nt not in self._visited_titles:
                     seen_in_queue.add(nt)
-                    self._title_queue.append(nt)
+                    self._title_queue.append((nt, current_depth + 1))
 
         self.state.save()
         stats = self.state.stats()

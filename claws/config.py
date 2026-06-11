@@ -31,6 +31,7 @@ DEFAULT_CONFIG = {
     "crawler": "html",          # "html" | "mediawiki" | "auto"
     "delay": 1.5,
     "jitter": 0.5,
+    "max_depth": None,          # None = unlimited (path-scoped for HTML)
     "encoding": "auto",         # "auto" = chardet detection
     "encoding_fallbacks": ["utf-8", "gb18030", "gbk", "big5",
                             "shift_jis", "euc-jp", "latin-1"],
@@ -90,6 +91,7 @@ WIKI_CONFIGS = {
     "zh.moegirl.org.cn": {
         "name": "Moegirlpedia",
         "crawler": "mediawiki",
+        "max_depth": 1,           # seed page + directly linked pages only
         "delay": 1.5,
         "jitter": 0.5,
         "action_api": "https://zh.moegirl.org.cn/api.php",
@@ -108,12 +110,14 @@ WIKI_CONFIGS = {
     "en.wikipedia.org": {
         "name": "Wikipedia EN",
         "crawler": "mediawiki",
+        "max_depth": 1,           # seed page + directly linked pages only
         "delay": 2.0,
         "jitter": 1.0,
     },
     "zh.wikipedia.org": {
         "name": "Wikipedia ZH",
         "crawler": "mediawiki",
+        "max_depth": 1,           # seed page + directly linked pages only
         "delay": 2.0,
         "jitter": 1.0,
     },
